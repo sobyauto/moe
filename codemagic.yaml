@@ -5,25 +5,27 @@ workflows:
     max_build_duration: 60
     environment:
       xcode: latest
+      cocoapods: default
     scripts:
       - name: Set up project
         script: |
           ls -la
-          echo "Workspace exists:"
-          ls -la Median.xcworkspace
+          mv .Median.xcworkspace Median.xcworkspace || true
+          mv .Median.xcodeproj Median.xcodeproj || true
+          mv .Median.xcworkspace Median.xcworkspace 2>/dev/null; mv .Median.xcodeproj Median.xcodeproj 2>/dev/null; ls -la
+          pod install || true
+          xcodebuild -list -workspace Median.xcworkspace
       - name: Build IPA without signing
         script: |
-          set -e
-          xcodebuild -workspace Median.xcworkspace -scheme Median -sdk iphoneos -configuration Release -archivePath build/Median.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" archive
-          mkdir -p build/Payload
-          cp -R build/Median.xcarchive/Products/Applications/*.app build/Payload/
-          cd build
+          xcodebuild -workspace Median.xcworkspace -scheme Median -sdk iphoneos -configuration Release -archivePath /tmp/Median.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" archive
+          mkdir -p /tmp/Payload
+          cp -R /tmp/Median.xcarchive/Products/Applications/*.app /tmp/Payload/
+          cd /tmp
           zip -r MoeElectric.ipa Payload
           ls -lh MoeElectric.ipa
-          pwd
+          cp MoeElectric.ipa $CM_BUILD_DIR/
     artifacts:
-      - build/MoeElectric.ipa
-      - build/**/MoeElectric.ipa
+      - /tmp/MoeElectric.ipa
       - MoeElectric.ipa
     publishing:
       email:
