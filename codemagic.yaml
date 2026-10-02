@@ -1,22 +1,20 @@
 workflows:
-  ios-unsigned:
-    name: iOS Unsigned IPA
-    max_build_duration: 60
+  ios-workflow:
+    name: iOS Workflow
     instance_type: mac_mini_m2
+    max_build_duration: 60
     environment:
       xcode: latest
-      cocoapods: default
     scripts:
-      - name: Install Pods
+      - name: Generate project
         script: |
-          pod install --repo-update || true
-      - name: Build Archive without signing
+          brew install tuist 2>/dev/null || true
+          tuist generate || tuist install && tuist generate || true
+      - name: Build IPA
         script: |
-          xcodebuild -workspace Median.xcworkspace -scheme Median -sdk iphoneos -configuration Release -archivePath build/Median.xcarchive archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" -allowProvisioningUpdates || xcodebuild -project Median.xcodeproj -scheme Median -sdk iphoneos -configuration Release -archivePath build/Median.xcarchive archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" -allowProvisioningUpdates
-      - name: Create IPA
-        script: |
+          xcodebuild -workspace Median.xcworkspace -scheme Median -sdk iphoneos -configuration Release -archivePath build/Median.xcarchive archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
           mkdir -p build/Payload
-          cp -r build/Median.xcarchive/Products/Applications/Median.app build/Payload/ || cp -r build/Median.xcarchive/Products/Applications/*.app build/Payload/
+          cp -R build/Median.xcarchive/Products/Applications/*.app build/Payload/
           cd build && zip -r MoeElectric.ipa Payload
     artifacts:
       - build/*.ipa
