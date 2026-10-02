@@ -5,44 +5,26 @@ workflows:
     max_build_duration: 60
     environment:
       xcode: latest
-      cocoapods: default
     scripts:
       - name: Set up project
         script: |
-          echo "Listing files..."
           ls -la
-          if [ -d "ios" ]; then
-            cd ios
-          fi
-          echo "Current dir:"
-          pwd
-          ls -la
-          if [ -f "Podfile" ]; then
-            pod install --repo-update
-          fi
+          echo "Workspace exists:"
+          ls -la Median.xcworkspace
       - name: Build IPA without signing
         script: |
-          if [ -d "ios" ]; then
-            cd ios
-          fi
-          WORKSPACE=$(find . -name "*.xcworkspace" | head -1)
-          echo "Found workspace: $WORKSPACE"
-          SCHEME=$(xcodebuild -list -workspace "$WORKSPACE" 2>/dev/null | grep -A 100 "Schemes:" | tail -n +2 | head -1 | xargs)
-          if [ -z "$SCHEME" ]; then
-            SCHEME="Median"
-          fi
-          echo "Using scheme: $SCHEME"
-          xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -sdk iphoneos -configuration Release -archivePath build/Median.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" archive
+          set -e
+          xcodebuild -workspace Median.xcworkspace -scheme Median -sdk iphoneos -configuration Release -archivePath build/Median.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" archive
           mkdir -p build/Payload
-          cp -R build/Median.xcarchive/Products/Applications/*.app build/Payload/ || cp -R build/Median.xcarchive/Products/Applications/* build/Payload/ || true
+          cp -R build/Median.xcarchive/Products/Applications/*.app build/Payload/
           cd build
           zip -r MoeElectric.ipa Payload
           ls -lh MoeElectric.ipa
+          pwd
     artifacts:
-      - build/**/MoeElectric.ipa
-      - ios/build/**/MoeElectric.ipa
-      - MoeElectric.ipa
       - build/MoeElectric.ipa
+      - build/**/MoeElectric.ipa
+      - MoeElectric.ipa
     publishing:
       email:
         recipients:
